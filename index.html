@@ -3,310 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring SS - PT Bina Sarana Sukses</title>
+    <title>BSS - Monitoring Dashboard</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- SheetJS (XLSX) -->
+    <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <style>
+        :root {
+            --midnight: #050810;
+            --slate-800: #101928;
+            --accent-blue: #3B82F6;
+            --accent-indigo: #6366F1;
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-bg: rgba(16, 25, 40, 0.6);
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #fdfdfe;
-            color: #0f172a;
+            background-color: var(--midnight);
+            color: #F8FAFC;
+            letter-spacing: -0.02em;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+
+        /* Glass Architecture */
+        .executive-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
+
+        .executive-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+            pointer-events: none;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
+
+        .executive-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
         }
+
+        /* Navigation Buttons */
         .tab-active {
-            background: #0f172a;
-            color: #fbbf24; /* Gold highlight */
-            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.2);
+            background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
+            color: white;
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
         }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* Smooth Loader */
         .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #059669; /* Emerald */
+            width: 50px;
+            height: 50px;
+            border: 2px solid rgba(255,255,255,0.05);
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
+            border-top-color: #6366F1;
+            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Typography Polish */
+        .text-gradient {
+            background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .card-premium {
-            background: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 0.6);
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
-            transition: all 0.3s ease;
+
+        /* Table Aesthetics */
+        table { border-collapse: separate; border-spacing: 0 8px; }
+        .table-row {
+            background: rgba(255, 255, 255, 0.02);
+            transition: all 0.2s ease;
         }
-        .card-premium:hover {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-            transform: translateY(-2px);
-        }
-        .sticky-col {
-            position: sticky;
-            left: 0;
-            background-color: white;
-            z-index: 10;
+        .table-row:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(4px);
         }
     </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="antialiased selection:bg-indigo-500/30">
 
     <!-- Header -->
-    <header class="bg-[#020617] text-white sticky top-0 z-50 border-b border-slate-800/50 shadow-2xl">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-5">
-                <div class="bg-amber-500 p-2.5 rounded-2xl text-slate-950 font-black shadow-[0_0_20px_rgba(245,158,11,0.3)]">BSS</div>
+    <header class="sticky top-0 z-50 bg-[#050810]/60 backdrop-blur-2xl border-b border-white/5">
+        <div class="max-w-[1600px] mx-auto px-8 py-5 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-600/40 transform -rotate-6">
+                    <i data-lucide="compass" class="w-6 h-6 text-white rotate-6"></i>
+                </div>
                 <div>
-                    <h1 class="text-xl font-extrabold uppercase tracking-tight leading-none text-white">Dashboard Monitoring SS</h1>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1.5 opacity-80">Portal Eksklusif PT Bina Sarana Sukses</p>
+                    <h1 class="text-2xl font-black tracking-tight text-white uppercase flex items-center gap-2">
+                        BSS
+                    </h1>
+                    <div class="flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-[0.5em]">Live Monitoring Portal</p>
+                    </div>
                 </div>
             </div>
             
-            <nav class="flex bg-slate-900/80 backdrop-blur-md rounded-2xl p-1.5 border border-slate-700/50">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 tab-active">
-                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Ringkasan
+            <nav class="flex bg-white/5 rounded-2xl p-1 border border-white/10 backdrop-blur-md">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="flex items-center gap-2 px-8 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-500 tab-active">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i> Ringkasan
                 </button>
-                <button onclick="switchTab('table')" id="btn-table" class="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 text-slate-400 hover:text-white">
-                    <i data-lucide="database" class="w-4 h-4"></i> Database
+                <button onclick="switchTab('table')" id="btn-table" class="flex items-center gap-2 px-8 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-500 text-slate-400 hover:text-white">
+                    <i data-lucide="bar-chart-horizontal" class="w-4 h-4"></i> Matriks Data
                 </button>
             </nav>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 md:p-10">
+    <main class="max-w-[1600px] mx-auto p-8">
         
         <!-- Loading State -->
-        <section id="loading-section" class="mt-20 text-center animate-in fade-in duration-700">
-            <div class="max-w-md mx-auto bg-white rounded-[3rem] p-16 shadow-2xl border border-slate-100">
-                <div class="mb-10 flex justify-center">
-                    <div class="bg-emerald-50 p-8 rounded-[2.5rem] ring-8 ring-emerald-50/30">
-                        <div class="loader w-14 h-14 border-4"></div>
-                    </div>
-                </div>
-                <h2 class="text-2xl font-black text-slate-900 mb-3 tracking-tight">Menyelaraskan Data...</h2>
-                <p class="text-slate-400 mb-8 leading-relaxed font-medium">Menghubungkan ke infrastruktur cloud Google Sheets.</p>
-                <p id="loading-status" class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Sedang Mengunduh...</p>
-                <div id="retry-container" class="hidden">
-                    <button onclick="fetchDataFromSheet()" class="bg-slate-900 text-white px-10 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl">Coba Lagi</button>
+        <section id="loading-section" class="mt-40 text-center animate-in fade-in zoom-in duration-1000">
+            <div class="flex flex-col items-center">
+                <div class="loader mb-8"></div>
+                <h2 class="text-3xl font-black tracking-tighter text-white">Inisialisasi Data</h2>
+                <p class="text-slate-500 font-medium mt-3">Mengenkripsi dan memproses repositori pusat...</p>
+                <div id="retry-container" class="hidden mt-10">
+                    <button onclick="fetchDataFromSheet()" class="px-10 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">Hubungkan Ulang</button>
                 </div>
             </div>
         </section>
 
-        <!-- Dashboard Tab -->
-        <section id="dashboard-tab" class="hidden space-y-10 animate-in slide-in-from-bottom-6 duration-700">
+        <!-- Dashboard View -->
+        <section id="dashboard-tab" class="hidden space-y-8 animate-in slide-in-from-bottom-20 duration-1000">
             
-            <!-- Info Bar -->
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 gap-4">
-                <div class="flex items-center gap-5">
-                    <div class="p-4 bg-emerald-50 rounded-[1.5rem] text-emerald-600 border border-emerald-100/50">
-                        <i data-lucide="refresh-cw" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Arsitektur Data Cloud</h4>
-                        <p class="font-extrabold text-slate-800 tracking-tight flex items-center gap-2">Google Sheets Terintegrasi <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span></p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span id="last-update" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sinkronisasi Terakhir: -</span>
-                    <button onclick="fetchDataFromSheet()" class="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-100 flex items-center gap-2">
-                        Refresh
-                    </button>
-                </div>
-            </div>
-
-            <!-- Profile & Main Stats -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- User Highlight Card -->
-                <div class="lg:col-span-8 bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-10">
-                    <div class="absolute top-0 right-0 w-80 h-80 bg-slate-50 rounded-full -mr-40 -mt-40 opacity-40"></div>
-                    <div class="flex items-center gap-8 relative z-10">
-                        <div class="bg-slate-900 p-6 rounded-[2.2rem] text-amber-400 shadow-2xl">
-                            <i data-lucide="user-check" class="w-12 h-12"></i>
+                <!-- User Core Card -->
+                <div class="lg:col-span-8 executive-card p-10 flex flex-col md:flex-row items-center gap-12 group">
+                    <div class="relative">
+                        <div class="w-28 h-28 bg-indigo-600/10 rounded-[40px] border border-indigo-500/20 flex items-center justify-center shadow-inner relative z-10 overflow-hidden">
+                            <i data-lucide="user" class="w-12 h-12 text-indigo-400"></i>
+                            <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
-                        <div>
-                            <span class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em] block mb-2">Penanggung Jawab</span>
-                            <h2 id="info-nama" class="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-2">-</h2>
-                            <p id="info-nik" class="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">-</p>
+                        <div class="absolute -bottom-2 -right-2 w-9 h-9 bg-emerald-500 rounded-2xl border-4 border-[#0F1928] z-20 flex items-center justify-center shadow-xl">
+                            <i data-lucide="zap" class="w-4 h-4 text-white fill-white"></i>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-10 relative z-10 border-t md:border-t-0 md:border-l border-slate-100 pt-8 md:pt-0 md:pl-10">
-                        <div>
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Struktur Organisasi</span>
-                            <p id="info-dept" class="text-sm font-black text-slate-800 leading-tight uppercase">-</p>
-                            <p id="info-jabatan" class="text-[10px] font-bold text-emerald-600 uppercase mt-2 tracking-widest">-</p>
-                        </div>
-                        <div class="space-y-6">
-                            <div>
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Lokasi Operasional</span>
-                                <p id="info-site" class="text-sm font-black text-slate-800 leading-tight uppercase">-</p>
-                            </div>
-                            <div>
-                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status S/NS</span>
-                                <p id="info-sns" class="text-sm font-black text-emerald-600 leading-tight uppercase font-black">-</p>
+                    <div class="relative z-10 flex-1 text-center md:text-left">
+                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-3 block">PIC</span>
+                        <h2 id="info-nama" class="text-4xl font-extrabold text-white tracking-tighter mb-4 text-gradient">-</h2>
+                        <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                            <div class="px-5 py-2.5 bg-white/5 rounded-2xl border border-white/5 text-[10px] font-bold text-slate-400">
+                                <span class="text-indigo-400 mr-2 uppercase tracking-widest">Kaltim Integrated Logistics</span> <span id="info-site" class="text-white uppercase">-</span>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Total Count Card -->
-                <div class="lg:col-span-4 bg-[#020617] rounded-[3rem] p-10 text-white flex flex-col items-center justify-center text-center relative overflow-hidden group border border-slate-800">
-                    <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4">Populasi Personil</span>
-                    <div id="stat-personnel-lg" class="text-8xl font-black text-white tracking-tighter mb-6 group-hover:scale-110 transition-transform duration-700">0</div>
-                    <button onclick="switchTab('table')" class="bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all backdrop-blur-md flex items-center gap-3">
-                        <i data-lucide="external-link" class="w-4 h-4 text-amber-400"></i> Eksplorasi Database
-                    </button>
-                </div>
-            </div>
-
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <!-- Achievement Card -->
-                <div class="bg-gradient-to-br from-emerald-700 to-emerald-900 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -mr-20 -mt-20"></div>
-                    <div class="relative z-10">
-                        <div class="flex justify-between items-start mb-6">
-                            <div class="p-4 bg-white/10 rounded-2xl"><i data-lucide="award" class="text-amber-400"></i></div>
-                            <span class="text-[10px] font-black uppercase tracking-widest bg-emerald-500/30 px-4 py-1.5 rounded-full border border-white/10">Prestasi</span>
+                    <div class="relative z-10 flex flex-col gap-6 border-t md:border-t-0 md:border-l border-white/5 pt-10 md:pt-0 md:pl-12 text-center md:text-left min-w-[150px]">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Departemen</p>
+                            <p id="info-dept" class="text-xs font-bold text-white uppercase tracking-tight">-</p>
                         </div>
-                        <p id="label-active-month" class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 mb-2">Pencapaian</p>
-                        <h3 id="stat-achievement" class="text-5xl font-black tracking-tighter mb-4">0%</h3>
-                        <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden mb-3">
-                            <div id="progress-achievement" class="h-full bg-amber-400 transition-all duration-1000 shadow-[0_0_10px_rgba(251,191,36,0.5)]" style="width: 0%"></div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Jabatan</p>
+                            <p id="info-jabatan" class="text-xs font-bold text-slate-300 uppercase tracking-tight">-</p>
                         </div>
-                        <p class="text-[9px] font-bold text-emerald-100/70 uppercase tracking-widest">Target: 13 SS / Bulan Aktif</p>
                     </div>
                 </div>
 
-                <!-- Total SS Card -->
-                <div class="card-premium p-8 rounded-[2.5rem]">
-                    <div class="p-4 bg-slate-50 text-slate-800 rounded-2xl w-fit mb-6"><i data-lucide="layers"></i></div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Akumulasi SS</p>
-                    <h3 id="stat-total-ss" class="text-5xl font-black text-slate-900 tracking-tighter">0</h3>
-                </div>
-
-                <!-- Avg Card -->
-                <div class="card-premium p-8 rounded-[2.5rem]">
-                    <div class="p-4 bg-slate-50 text-slate-800 rounded-2xl w-fit mb-6"><i data-lucide="zap"></i></div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Produktivitas</p>
-                    <h3 id="stat-avg" class="text-5xl font-black text-slate-900 tracking-tighter">0</h3>
-                </div>
-
-                <!-- Max Card -->
-                <div class="card-premium p-8 rounded-[2.5rem]">
-                    <div class="p-4 bg-slate-50 text-amber-600 rounded-2xl w-fit mb-6"><i data-lucide="trending-up"></i></div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">High Performer</p>
-                    <h3 id="stat-max" class="text-5xl font-black text-slate-900 tracking-tighter">0</h3>
-                </div>
-            </div>
-
-            <!-- SOP Target Message -->
-            <div class="bg-slate-50 border border-slate-200/60 p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center gap-8">
-                <div class="p-5 bg-white shadow-sm border border-slate-100 rounded-[1.5rem] text-slate-900"><i data-lucide="info" class="w-8 h-8"></i></div>
-                <div class="flex-1 text-center md:text-left">
-                    <h4 class="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-2">Standard Operating Procedure (SOP) Target</h4>
-                    <p class="text-sm text-slate-500 font-medium leading-relaxed">
-                        Klasifikasi Target: <span class="text-emerald-700 font-extrabold uppercase tracking-tighter">Storeman</span> (1 SS / Bulan) &bullet; 
-                        <span class="text-slate-900 font-extrabold uppercase tracking-tighter">Staff/Sec Head</span> (1 SS / Kuartal).
-                    </p>
+                <!-- High Impact Achievement Card -->
+                <div class="lg:col-span-4 executive-card p-10 bg-gradient-to-br from-indigo-600/20 to-transparent border-indigo-500/20 flex flex-col justify-between group">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 mb-2">Target Active</h3>
+                            <p id="label-active-month" class="text-2xl font-black text-white uppercase tracking-tighter">-</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 text-yellow-400 shadow-xl">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                    <div class="mt-10">
+                        <div class="flex justify-between items-end mb-4">
+                            <h4 id="stat-achievement" class="text-7xl font-black text-white tracking-tighter">0%</h4>
+                            <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] pb-3">Progress</p>
+                        </div>
+                        <div class="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                            <div id="progress-achievement" class="h-full bg-gradient-to-r from-indigo-500 to-blue-400 shadow-[0_0_20px_rgba(99,102,241,0.6)] transition-all duration-1000" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between mt-4">
+                            <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Base Plan: 13 SS</p>
+                            <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Live Sync</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Charts Section -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div class="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm">
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 mb-10 text-slate-400">
-                        <i data-lucide="line-chart" class="text-emerald-600 w-5 h-5"></i> Analisis Tren SS Bulanan
-                    </h3>
-                    <div id="chart-trend" class="min-h-[350px]"></div>
+            <!-- Dashboard Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="executive-card p-8 group hover:bg-indigo-600/5">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Total SS Terkumpul</p>
+                    <h4 id="stat-total-ss" class="text-3xl font-black text-white tracking-tighter">-</h4>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                        <i data-lucide="trending-up" class="w-3 h-3"></i> Global Accumulation
+                    </div>
                 </div>
-                <div class="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-sm">
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 mb-10 text-slate-400">
-                        <i data-lucide="globe" class="text-emerald-600 w-5 h-5"></i> Performa Berdasarkan Lokasi
-                    </h3>
-                    <div id="chart-site" class="min-h-[300px]"></div>
+                <div class="executive-card p-8 group hover:bg-emerald-600/5">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Rata-rata Bulanan</p>
+                    <h4 id="stat-avg" class="text-3xl font-black text-white tracking-tighter">-</h4>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                        <i data-lucide="bar-chart" class="w-3 h-3"></i> Monthly Average
+                    </div>
+                </div>
+                <div class="executive-card p-8 group hover:bg-amber-600/5">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Rekor Tertinggi</p>
+                    <h4 id="stat-max" class="text-3xl font-black text-white tracking-tighter">-</h4>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                        <i data-lucide="star" class="w-3 h-3"></i> Peak Performance
+                    </div>
+                </div>
+                <div class="executive-card p-8 group hover:bg-slate-700/5">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Populasi Terdaftar</p>
+                    <h4 id="stat-personnel-lg" class="text-3xl font-black text-white tracking-tighter">-</h4>
+                    <div class="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <i data-lucide="users" class="w-3 h-3"></i> Active Personnel
+                    </div>
                 </div>
             </div>
-            
+
+            <!-- Visual Analytics Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 executive-card p-10">
+                    <div class="flex justify-between items-center mb-12">
+                        <div>
+                            <h3 class="text-xs font-black uppercase tracking-[0.4em] text-white">Trend Dinamika Performa</h3>
+                            <p class="text-[10px] text-slate-500 font-bold mt-2 uppercase tracking-widest">Analisis volume aktual terkumpul per periode</p>
+                        </div>
+                        <button onclick="fetchDataFromSheet()" class="p-4 bg-white/5 hover:bg-indigo-600 rounded-2xl transition-all border border-white/5 text-slate-400 hover:text-white shadow-xl">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div id="chart-trend" class="min-h-[400px]"></div>
+                </div>
+
+                <div class="executive-card p-10 flex flex-col">
+                    <h3 class="text-xs font-black uppercase tracking-[0.4em] text-white mb-12">Sebaran Operasional</h3>
+                    <div id="chart-site" class="flex-1 min-h-[300px]"></div>
+                    <div class="mt-6 p-6 bg-white/5 rounded-2xl border border-white/5">
+                        <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Informasi Site</p>
+                        <p class="text-[10px] text-slate-400 leading-relaxed font-medium">Data mewakili kontribusi SS terverifikasi dari Kaltim Integrated Logistics.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Official Policy -->
+            <div class="executive-card p-10 bg-[#0A101C] border-indigo-500/10">
+                <div class="flex flex-col md:flex-row items-center gap-10">
+                    <div class="w-20 h-20 bg-indigo-600/10 rounded-3xl flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                        <i data-lucide="info" class="w-10 h-10"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-3">Policy & Compliance Reminder</h4>
+                        <p class="text-sm text-slate-400 leading-relaxed font-medium tracking-tight">
+                            Berdasarkan ketetapan manajemen, target minimal Suggestion System (SS) adalah: 
+                            <span class="text-white font-black underline decoration-indigo-500 decoration-2 underline-offset-4">Storeman (1 SS/Bulan)</span> dan 
+                            <span class="text-white font-black underline decoration-indigo-500 decoration-2 underline-offset-4">Staff/Sec Head (1 SS/3 Bulan)</span>.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <!-- Table Tab -->
-        <section id="table-tab" class="hidden animate-in zoom-in duration-500">
-            <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden">
-                <div class="p-10 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                    <div>
-                        <h3 class="text-2xl font-black text-slate-900 tracking-tighter leading-none mb-2">Database Matriks Utama</h3>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detail Performa Akumulatif & Bulanan</p>
-                    </div>
-                    <div class="relative group w-full md:w-[400px]">
-                        <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-600 transition-colors w-5 h-5"></i>
-                        <input type="text" id="search-input" placeholder="Cari Personil, NIK, atau Site..." class="w-full pl-14 pr-8 py-4 bg-slate-50 border-2 border-transparent focus:border-emerald-600 focus:bg-white rounded-2xl outline-none text-sm font-bold transition-all shadow-inner">
-                    </div>
+        <!-- Matrix Table View -->
+        <section id="table-tab" class="hidden space-y-10 animate-in zoom-in duration-700">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                <div>
+                    <h2 class="text-4xl font-black text-white tracking-tighter leading-none mb-3 text-gradient">Master Matrix</h2>
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.5em]">Repositori Data Personil & Performa</p>
                 </div>
-                
+                <div class="relative w-full lg:w-[480px] group">
+                    <i data-lucide="search" class="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors w-5 h-5"></i>
+                    <input type="text" id="search-input" placeholder="Cari personil, NAMA, atau lokasi..." class="w-full pl-16 pr-8 py-5 bg-white/5 border border-white/10 focus:border-indigo-600 focus:bg-white/10 rounded-[24px] outline-none text-sm font-bold transition-all text-white placeholder:text-slate-700">
+                </div>
+            </div>
+
+            <div class="executive-card overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse min-w-[1600px]" id="main-table">
-                        <thead id="table-header" class="bg-slate-50/50"></thead>
-                        <tbody id="table-body" class="divide-y divide-slate-50"></tbody>
+                    <table class="w-full text-left min-w-[1600px]">
+                        <thead id="table-header" class="bg-white/5 sticky top-0 z-20 backdrop-blur-3xl"></thead>
+                        <tbody id="table-body" class="text-slate-400"></tbody>
                     </table>
                 </div>
-
-                <div class="p-8 bg-slate-50/50 border-t border-slate-100 flex justify-between items-center px-10">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Logistics Intelligence Portal</span>
-                    <span id="record-count" class="text-[10px] font-black text-emerald-700 bg-emerald-50 px-5 py-2 rounded-full uppercase tracking-widest border border-emerald-100">0 Record Terdeteksi</span>
+                <div class="p-10 bg-black/40 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex items-center gap-4">
+                        <span id="record-count" class="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-6 py-2 rounded-full uppercase tracking-widest border border-indigo-500/20 shadow-lg">0 Records</span>
+                        <span id="last-update-footer" class="text-[9px] font-bold text-slate-600 uppercase tracking-widest italic">Live Sync Enabled</span>
+                    </div>
+                    <p class="text-[9px] text-slate-700 font-bold uppercase tracking-[0.3em]">BSS INTEL v3.1 Executive Intelligence</p>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-10 right-10 transform translate-y-32 opacity-0 transition-all duration-700 z-[100]">
-        <div class="bg-slate-900 text-white px-8 py-5 rounded-3xl shadow-2xl flex items-center gap-4 border border-slate-800">
-            <div id="toast-icon" class="text-emerald-400"><i data-lucide="check-circle-2" class="w-6 h-6"></i></div>
-            <p id="toast-msg" class="text-xs font-black uppercase tracking-widest">Sinkronisasi Berhasil!</p>
+    <!-- Global Toast -->
+    <div id="toast" class="fixed bottom-12 right-12 transform translate-y-32 opacity-0 transition-all duration-700 z-[100]">
+        <div class="bg-white text-[#050810] px-10 py-5 rounded-[24px] shadow-2xl flex items-center gap-5 border border-white/10">
+            <div id="toast-icon" class="w-8 h-8 bg-emerald-500/10 text-emerald-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <p id="toast-msg" class="text-xs font-black uppercase tracking-widest">Sistem Terhubung!</p>
+                <p class="text-[9px] font-bold text-slate-400 uppercase mt-1">Real-time sync completed</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- Config ---
+        // --- System Core Intelligence ---
         const SHEET_ID = "2PACX-1vSLdwSFbZo_4FkZ4DkDY94OIeUi185sMVVchzCRGUQnfXLV-sliGH2b_xoorRDg8CUPCR2YTtfj_lab";
         const GID = "1533662997";
         const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=${GID}&output=csv`;
         const MONTHLY_TARGET = 13;
 
-        // --- State ---
         let rawData = [];
         let allColumns = [];
         let actMonthColumns = [];
         let siteChart = null;
         let trendChart = null;
 
-        /**
-         * Helper untuk memperbarui teks elemen secara aman
-         */
         const setSafeText = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.innerText = val;
@@ -317,39 +356,34 @@
             fetchDataFromSheet();
         };
 
-        /**
-         * Mengambil data dari Google Sheets
-         */
         async function fetchDataFromSheet() {
             const statusLabel = document.getElementById('loading-status');
             const retryContainer = document.getElementById('retry-container');
             
-            if (statusLabel) statusLabel.innerText = "Mengambil data aktual...";
+            if (statusLabel) statusLabel.innerText = "Synchronizing Repository...";
             if (retryContainer) retryContainer.classList.add('hidden');
 
             try {
                 const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error("Koneksi gagal");
+                if (!response.ok) throw new Error("Connection Denied");
                 
                 const csvData = await response.text();
                 const workbook = XLSX.read(csvData, { type: 'string' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(sheet, { defval: 0 });
                 
-                if (json.length === 0) throw new Error("Dataset kosong");
+                if (json.length === 0) throw new Error("Empty Matrix");
 
                 allColumns = Object.keys(json[0]);
-                // Cari kolom "Act" (Data aktual SS)
                 actMonthColumns = allColumns.filter(k => /act\s/i.test(k));
 
                 rawData = json.map(row => {
                     const normalized = {};
                     allColumns.forEach(k => {
-                        normalized[k.toLowerCase()] = row[k];
+                        normalized[k.toLowerCase().trim()] = row[k];
                         normalized[`_orig_${k}`] = row[k];
                     });
                     
-                    // Hitung total SS hanya dari kolom aktual (Act)
                     normalized._total_ss = actMonthColumns.reduce((acc, col) => {
                         return acc + (parseFloat(row[col]) || 0);
                     }, 0);
@@ -357,47 +391,44 @@
                     return normalized;
                 });
 
-                const loadingSection = document.getElementById('loading-section');
-                const dashboardTab = document.getElementById('dashboard-tab');
-                if (loadingSection) loadingSection.classList.add('hidden');
-                if (dashboardTab) dashboardTab.classList.remove('hidden');
+                document.getElementById('loading-section').classList.add('hidden');
+                document.getElementById('dashboard-tab').classList.remove('hidden');
 
-                setSafeText('last-update', `Terakhir: ${new Date().toLocaleTimeString()}`);
+                const ts = new Date().toLocaleTimeString();
+                setSafeText('last-update', `Sync: ${ts}`);
                 
                 switchTab('dashboard');
                 updateUI();
-                showToast("Data Tersinkronisasi", "check-circle-2", "green");
+                showToast("Sistem Terhubung", "check-circle", "indigo");
 
             } catch (err) {
                 console.error(err);
-                if (statusLabel) statusLabel.innerText = "Gagal memuat: " + err.message;
+                if (statusLabel) statusLabel.innerText = "Fail: " + err.message;
                 if (retryContainer) retryContainer.classList.remove('hidden');
             }
         }
 
-        /**
-         * Memperbarui UI Ringkasan
-         */
         function updateUI() {
             if (rawData.length === 0) return;
 
             const first = rawData[0];
-            const getV = (searchKey) => {
-                const foundHeader = allColumns.find(h => h.toLowerCase().includes(searchKey.toLowerCase()));
+            const getV = (key) => {
+                const foundHeader = allColumns.find(h => h.toLowerCase().includes(key.toLowerCase()));
                 if (foundHeader) {
-                    const val = first[foundHeader.toLowerCase()];
-                    return (val === undefined || val === null || val === "") ? "-" : val;
+                    const val = first[foundHeader.toLowerCase().trim()];
+                    return (val === undefined || val === null || val === "" || val === 0) ? "-" : val;
                 }
                 return '-';
             };
 
+            // Set Profile Card
             setSafeText('info-nama', getV('nama'));
-            setSafeText('info-nik', getV('nik'));
+            setSafeText('info-site', getV('site'));
             setSafeText('info-jabatan', getV('jabatan'));
             setSafeText('info-dept', getV('departemen'));
-            setSafeText('info-site', getV('site'));
             setSafeText('info-sns', getV('s/ns'));
 
+            // Set Main Stats
             const grandTotalSS = rawData.reduce((acc, row) => acc + row._total_ss, 0);
             const totalMonths = actMonthColumns.length || 1;
             const avgPerMonth = grandTotalSS / totalMonths;
@@ -408,7 +439,7 @@
             setSafeText('stat-max', Math.round(maxVal));
             setSafeText('stat-personnel-lg', rawData.length);
 
-            // Achievement Calculation
+            // Set Achievement
             let activeMonthCol = actMonthColumns[actMonthColumns.length - 1];
             for(let i = actMonthColumns.length - 1; i >= 0; i--) {
                 const totalMonthActual = rawData.reduce((sum, r) => sum + (parseFloat(r[`_orig_${actMonthColumns[i]}`]) || 0), 0);
@@ -424,18 +455,15 @@
             setSafeText('label-active-month', activeMonthCol.replace(/act\s/i, '').toUpperCase());
             setSafeText('stat-achievement', `${achievementPct}%`);
             
-            const progressBar = document.getElementById('progress-achievement');
-            if (progressBar) progressBar.style.width = `${achievementPct}%`;
+            const pb = document.getElementById('progress-achievement');
+            if (pb) pb.style.width = `${achievementPct}%`;
 
             renderCharts();
             renderTable();
         }
 
-        /**
-         * Merender Grafik
-         */
         function renderCharts() {
-            const chartFont = 'Plus Jakarta Sans';
+            const chartFont = 'Inter, sans-serif';
             const siteData = {};
             rawData.forEach(d => {
                 const site = String(d._orig_site || d._orig_SITE || 'N/A').toUpperCase();
@@ -443,14 +471,15 @@
             });
 
             if (siteChart) siteChart.destroy();
-            const siteChartEl = document.querySelector("#chart-site");
-            if (siteChartEl) {
-                siteChart = new ApexCharts(siteChartEl, {
-                    series: [{ name: 'SS Aktual', data: Object.values(siteData) }],
-                    chart: { type: 'bar', height: 300, toolbar: { show: false }, fontFamily: chartFont },
-                    plotOptions: { bar: { borderRadius: 12, horizontal: true, barHeight: '40%' } },
-                    colors: ['#059669'],
-                    xaxis: { categories: Object.keys(siteData) },
+            const siteEl = document.querySelector("#chart-site");
+            if (siteEl) {
+                siteChart = new ApexCharts(siteEl, {
+                    series: [{ name: 'Aktual SS', data: Object.values(siteData) }],
+                    chart: { type: 'bar', height: 320, toolbar: { show: false }, fontFamily: chartFont, foreColor: '#64748B' },
+                    plotOptions: { bar: { borderRadius: 12, horizontal: true, barHeight: '30%', distributed: false } },
+                    colors: ['#6366F1'],
+                    dataLabels: { enabled: false },
+                    xaxis: { categories: Object.keys(siteData), axisBorder: { show: false }, axisTicks: { show: false } },
                     grid: { show: false }
                 });
                 siteChart.render();
@@ -461,122 +490,109 @@
             });
 
             if (trendChart) trendChart.destroy();
-            const trendChartEl = document.querySelector("#chart-trend");
-            if (trendChartEl) {
-                trendChart = new ApexCharts(trendChartEl, {
-                    series: [{ name: 'Volume SS Bulanan', data: trendSeries }],
-                    chart: { type: 'area', height: 350, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: chartFont },
-                    stroke: { curve: 'smooth', width: 4 },
-                    colors: ['#059669'],
-                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+            const trendEl = document.querySelector("#chart-trend");
+            if (trendEl) {
+                trendChart = new ApexCharts(trendEl, {
+                    series: [{ name: 'Volume SS', data: trendSeries }],
+                    chart: { type: 'area', height: 400, toolbar: { show: false }, fontFamily: chartFont, foreColor: '#475569' },
+                    stroke: { curve: 'smooth', width: 5, colors: ['#6366F1'] },
+                    colors: ['#6366F1'],
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.2, opacityTo: 0.0, stops: [0, 95, 100] } },
                     xaxis: { categories: actMonthColumns.map(c => c.replace(/act\s/i, '').toUpperCase()), axisBorder: { show: false } },
-                    grid: { borderColor: '#f1f5f9', strokeDashArray: 4 }
+                    yaxis: { labels: { style: { fontWeight: 600 } } },
+                    grid: { borderColor: 'rgba(255,255,255,0.03)', strokeDashArray: 6 }
                 });
                 trendChart.render();
             }
         }
 
-        /**
-         * Merender Tabel Database
-         */
         function renderTable() {
             const header = document.getElementById('table-header');
             const body = document.getElementById('table-body');
             if (!header || !body) return;
             
-            const metadataCols = ['NIK', 'NAMA', 'JABATAN', 'DEPARTEMEN', 'SITE', 'S/NS'];
-            // FILTRASI: Hanya gunakan actMonthColumns yang sudah difilter di awal (hanya kolom 'Act')
+            const metadataCols = ['NAMA', 'JABATAN', 'DEPARTEMEN', 'SITE', 'S/NS'];
             const monthCols = actMonthColumns;
 
             header.innerHTML = `
-                <tr class="border-b border-slate-100">
-                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">No</th>
-                    ${metadataCols.map(c => `<th class="px-6 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">${c}</th>`).join('')}
-                    <th class="px-6 py-6 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50/50 text-center">TOTAL</th>
-                    ${monthCols.map(c => `<th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">${c}</th>`).join('')}
+                <tr class="text-slate-500 uppercase">
+                    <th class="px-10 py-8 text-[9px] font-black tracking-widest">#</th>
+                    ${metadataCols.map(c => `<th class="px-6 py-8 text-[9px] font-black tracking-widest">${c}</th>`).join('')}
+                    <th class="px-6 py-8 text-[9px] font-black tracking-widest text-indigo-400 bg-white/5 text-center">TOTAL</th>
+                    ${monthCols.map(c => `<th class="px-6 py-8 text-[9px] font-black tracking-widest text-center">${c.replace('Act ', '')}</th>`).join('')}
                 </tr>
             `;
 
             body.innerHTML = '';
             rawData.forEach((row, idx) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-50 group";
+                tr.className = "table-row group";
                 
                 const metaCells = metadataCols.map(c => {
-                    const val = row[c.toLowerCase()] || '-';
+                    const val = row[c.toLowerCase().trim()] || '-';
                     const isName = (c === 'NAMA');
-                    return `<td class="px-6 py-5 text-xs font-bold ${isName ? 'text-slate-900 uppercase font-extrabold tracking-tight' : 'text-slate-500'}">${val}</td>`;
+                    return `<td class="px-6 py-6 text-xs font-bold ${isName ? 'text-white uppercase font-black tracking-tighter' : 'text-slate-500'}">${val}</td>`;
                 }).join('');
 
                 const monthlyCells = monthCols.map(c => {
                     const val = row[`_orig_${c}`] || 0;
-                    const isAct = c.toLowerCase().includes('act');
-                    return `<td class="px-4 py-5 text-xs text-center ${val > 0 ? 'font-black text-slate-800' : 'text-slate-300'} ${isAct && val > 0 ? 'bg-emerald-50/30' : ''}">${val}</td>`;
+                    return `<td class="px-6 py-6 text-xs text-center ${val > 0 ? 'font-black text-indigo-400' : 'text-slate-800'}">${val}</td>`;
                 }).join('');
 
                 tr.innerHTML = `
-                    <td class="px-8 py-5 text-[10px] font-black text-slate-300">${idx + 1}</td>
+                    <td class="px-10 py-6 text-[10px] font-black text-slate-800">${idx + 1}</td>
                     ${metaCells}
-                    <td class="px-6 py-5 text-xs font-black text-emerald-700 bg-emerald-50/30 text-center">${Math.round(row._total_ss)}</td>
+                    <td class="px-6 py-6 text-xs font-black text-indigo-400 bg-indigo-500/5 text-center group-hover:bg-indigo-500/10">${Math.round(row._total_ss)}</td>
                     ${monthlyCells}
                 `;
                 body.appendChild(tr);
             });
             
-            setSafeText('record-count', `${rawData.length} Personil Terdaftar`);
+            setSafeText('record-count', `${rawData.length} PERSONNEL`);
         }
 
-        // Search Listener
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+        const si = document.getElementById('search-input');
+        if (si) {
+            si.addEventListener('input', (e) => {
                 const term = e.target.value.toLowerCase();
-                const tableBody = document.getElementById('table-body');
-                if (!tableBody) return;
-                const rows = tableBody.children;
+                const tb = document.getElementById('table-body');
+                if (!tb) return;
+                const rows = tb.children;
                 rawData.forEach((row, idx) => {
                     if (rows[idx]) {
-                        const isMatch = Object.values(row).some(v => String(v).toLowerCase().includes(term));
-                        rows[idx].style.display = isMatch ? '' : 'none';
+                        const match = Object.values(row).some(v => String(v).toLowerCase().includes(term));
+                        rows[idx].style.display = match ? '' : 'none';
                     }
                 });
             });
         }
 
-        /**
-         * Perpindahan Tab
-         */
         function switchTab(tab) {
             ['dashboard', 'table'].forEach(t => {
-                const tabEl = document.getElementById(`${t}-tab`);
-                const btnEl = document.getElementById(`btn-${t}`);
-                if (tabEl) tabEl.classList.add('hidden');
-                if (btnEl) {
-                    btnEl.classList.remove('tab-active');
-                    btnEl.classList.add('text-slate-400');
+                const te = document.getElementById(`${t}-tab`);
+                const be = document.getElementById(`btn-${t}`);
+                if (te) te.classList.add('hidden');
+                if (be) {
+                    be.classList.remove('tab-active');
+                    be.classList.add('text-slate-400');
                 }
             });
             
-            const activeTab = document.getElementById(`${tab}-tab`);
-            const activeBtn = document.getElementById(`btn-${tab}`);
-            if (activeTab) activeTab.classList.remove('hidden');
-            if (activeBtn) activeBtn.classList.add('tab-active');
+            document.getElementById(`${tab}-tab`).classList.remove('hidden');
+            document.getElementById(`btn-${tab}`).classList.add('tab-active');
             lucide.createIcons();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        /**
-         * Notifikasi Toast
-         */
         function showToast(msg, icon, color) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toast-msg');
-            if (toast && toastMsg) {
-                toastMsg.innerText = msg;
-                toast.classList.remove('translate-y-32', 'opacity-0');
-                toast.classList.add('translate-y-0', 'opacity-100');
+            const t = document.getElementById('toast');
+            const tm = document.getElementById('toast-msg');
+            if (t && tm) {
+                tm.innerText = msg;
+                t.classList.remove('translate-y-32', 'opacity-0');
+                t.classList.add('translate-y-0', 'opacity-100');
                 setTimeout(() => {
-                    toast.classList.add('translate-y-32', 'opacity-0');
+                    t.classList.add('translate-y-32', 'opacity-0');
                 }, 3000);
             }
         }
